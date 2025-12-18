@@ -1,0 +1,35 @@
+// File: src/config/db.js
+const mongoose = require('mongoose');
+const logger = require('./logger');
+const env = require('./env');
+
+const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(env.MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+
+        logger.info(`MongoDB Connected: ${conn.connection.host}`);
+
+        // Handle connection events
+        mongoose.connection.on('error', (err) => {
+            logger.error('MongoDB connection error:', err);
+        });
+
+        mongoose.connection.on('disconnected', () => {
+            logger.warn('MongoDB disconnected');
+        });
+
+        process.on('SIGINT', async () => {
+            await mongoose.connection.close();
+            process.exit(0);
+        });
+
+    } catch (error) {
+        logger.error(`MongoDB connection error: ${error.message}`);
+        process.exit(1);
+    }
+};
+
+module.exports = { connectDB };
